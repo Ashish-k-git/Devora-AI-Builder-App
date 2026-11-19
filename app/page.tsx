@@ -1,69 +1,299 @@
-import Image from "next/image";
+"use client"
+import { StarsBackground } from "@/components/animate-ui/components/backgrounds/stars";
+import { BlueTitle, GrayTitle, SectionHeading, SectionLabel } from "@/components/Reusables";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import WorkspaceMockup from "@/components/WorkspaceMockup";
+import { FEATURES, PLACEHOLDERS, STEPS, SUGGESTIONS } from "@/lib/data";
+import { cn } from "@/lib/utils";
+import { PricingTable, SignInButton, useAuth } from "@clerk/nextjs";
+import { ArrowRight, ChevronRight} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 
 export default function Home() {
+
+  const {isSignedIn} = useAuth() ; 
+  const router = useRouter();
+  const textareaRef = useRef<HTMLTextAreaElement>(null); 
+  
+
+  const [prompt,setPrompt] = useState(""); 
+  const [placeholderIndex,setPlaceholderIndex] = useState(0);
+  const[isFocused,setIsFocused] = useState(false); 
+
+  //for placeholder 
+  useEffect(()=>{
+    if(isFocused || prompt) return; 
+    const t = setInterval(()=>{
+      setPlaceholderIndex((i)=>(i+1)%PLACEHOLDERS.length);
+    },4000);
+    return ()=>clearInterval(t); 
+  },[isFocused,prompt]);
+
+  useEffect(()=>{
+    const el = textareaRef.current; 
+    if(!el) return; 
+    el.style.height = "auto"; 
+    el.style.height = Math.min(el.scrollHeight,200) +"px"; 
+  },[prompt]);
+
+  const handleSubmit=()=>{
+    if(!prompt.trim() || !isSignedIn) return; 
+    router.push(`/workspace?prompt=${encodeURIComponent(prompt.trim())}`); 
+  }
+
+  //Submit on Enter , allow shift+Enter for new line 
+  const handleKeyDown = (e:React.KeyboardEvent<HTMLTextAreaElement>)=>{
+    if(e.key=="Enter" && !e.shiftKey){
+      e.preventDefault() ; 
+      handleSubmit() ; 
+    }
+  }
+
+  const handleSuggestion=(s:string)=>{
+    setPrompt(s); 
+    textareaRef.current?.focus(); 
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <main className="min-h-screen bg-black selection:bg-white/20">
+      <section
+      className="relative flex flex-col items-center overflow-hidden px-4 pb-24 pt-40 text-center"
+      >
+        <StarsBackground
+          className="absolute inset-0 h-full w-full"
+          style={{
+            maskImage:
+              "linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.4) 50%, transparent 100%)",
+            WebkitMaskImage:
+              "linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.4) 50%, transparent 100%)",
+          }}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
+        <Badge variant="outline"
+        className="gap-2 p-4 backdrop:blur-sm"
+        >
+          <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+          Powered by Gemini 3.5 flash
+        </Badge>
+
+
+        <h1 className="mx-auto max-w-3xl text-balance font-serif text-5xl leading-tight tracking-tight sm:text-5xl lg:text-7xl z-10">
+          <GrayTitle>Forge your dream</GrayTitle>
+          <br />
+          <BlueTitle>from a single prompt.</BlueTitle>
+        </h1>
+
+        <p
+          className="mx-auto mt-6 max-w-xl text-balance text-base leading-relaxed text-white/40 z-10"
+        >
+          Describe what you want to build. AI writes the code, picks the packages, and renders a live preview all inside your browser
+        </p>
+
+        {/* Prompt box  */}
+
+        <div className="relative mx-auto mt-12 w-full max-w-2xl ">
+          <div className={cn("rounded-2xl border bg-[#111111] duration-200",
+            isFocused
+            ?"border-white/20 ring-1 ring-white/8"
+            :"border-white/8"
+          )}>
+            <textarea 
+              ref={textareaRef}
+              value = {prompt}
+              onChange={(e)=>setPrompt(e.target.value)}
+              onFocus={()=>setIsFocused(true)}
+              onBlur = {()=>setIsFocused(false)}
+              onKeyDown={()=>handleKeyDown}
+              rows={1}
+              className="w-full resize-none bg-transparent px-5 pb-4 pt-5 text-sm placeholder:text-white/20 focus:outline-none sm:text-base"
+              style={{minHeight:56 , maxHeight:200}}
+              placeholder={PLACEHOLDERS[placeholderIndex]}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+            <div className="flex items-center justify-between border-t border-white/60 px-4 py-2.5 ">
+              <span className="text-xs text-white/20">
+                Press Enter to Generate . Shift+Enter for new line
+              </span>
+              {isSignedIn?(
+                <Button
+                  onClick={handleSubmit}
+                  disabled={!prompt.trim()}
+                  className="h-8 rounded-full px-5 font-semibold"
+                  variant={prompt.trim()?"default":"secondary"}
+                >
+                  Generate
+                  <ArrowRight className="h-3.5 w-3.5"/>
+                </Button>
+              ):(
+                <SignInButton mode="modal">
+                  <Button className="h-8 rounded-full bg-white px-5 font-semibold">
+                    Generate
+                    <ArrowRight className="h-3.5 w-3.5"/>
+                  </Button>
+                </SignInButton>
+              )}
+            </div>
+          </div>
+          
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
+            {SUGGESTIONS.map((s)=>(
+              <button
+                key={s}
+                onClick={()=>handleSuggestion(s)}
+                className="rounded-full border border-white/8 bg-white/4 px-3 py-1.5 text-xs text-white/40 hover:border-white/15 hover:bg-white/8 hover:text-white/70"
+              >
+                {s}
+              </button>
+            ))}
+          </div>
         </div>
-      </main>
-    </div>
+
+        <p className="mt-10 text-xs text-white/20"> 
+          No credit card required -10 free generations on sign up 
+        </p>
+
+        <WorkspaceMockup />
+      </section>
+
+      <section className="px-4 pb-32">
+        <div className="mx-auto mb-14 max-w-5xl text-center">
+          <SectionLabel>Everything you need</SectionLabel>
+          <SectionHeading gray="From Prompt" blue="to production." />
+        </div>
+
+        <div className="mx-auto grid max-w-5xl grid-cols-1 gap-px overflow-hidden rounded-2xl border border-white/6 bg-white/6 sm:grid-cols-2 lg:grid-cols-3">
+            {FEATURES.map(({icon:Icon,label ,desc})=>{
+              return(
+                <div
+                  key={label}
+                  className="group bg-[#0a0a0a] p-7 hover:bg-[#0f0f0f]"
+                >
+                  <div className="mb-4 flex h-9 w-9 items-center justify-center rounded-lg border border-white/8 bg-white/4 group-hover:border-white/15 group-hover:bg-white/8">
+
+                    <Icon className="h-4 w-4 text-white/60 group-hover:text-blue-400/70" />                    
+                  </div>
+                  <p className="mb-2 text-sm font-semibold">{label}</p>
+                  <p className="text-sm leading-relaxed text-white/40">{desc}</p>
+                </div>
+              )
+            })}
+        </div>
+
+      </section>
+
+      <section className="px-4 pb-32">
+        <div className="mx-auto mb-14 max-w-5xl text-center">
+          <SectionLabel>How it works</SectionLabel>
+          <SectionHeading gray="Four steps" blue="to a working app." />
+        </div>
+
+        <div className="mx-auto max-w-3xl">
+            {STEPS.map((step,i)=>{
+              return (
+                <div
+                  key={step.number}
+                  className="flex gap-6"
+                >
+                  <div className="flex flex-col items-center">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/4">
+                      <span className="font-mono text-xs font-semibold text-white/50">
+                        {step.number}
+                      </span>
+                    </div>
+
+                    {i<STEPS.length-1 && (
+                      <div className="mt-2 h-full w-px bg-white/6"/>
+                    )}
+
+                  </div>
+
+                  <div className="pb-10 pt-1.5">
+                    <p className="mb-1.5 text-sm font-semibold sm:text-base">
+                      {step.label}
+                    </p>
+
+                    <p className="text-sm leading-relaxed text-white/40">
+                      {step.desc}
+                    </p>
+
+                  </div>
+
+                </div>
+              )
+            })}
+        </div>
+
+      </section>
+
+
+      <section className="px-4 pb-32">
+        <div className="mx-auto mb-14 max-w-5xl text-center">
+          <SectionLabel>Simple Pricing</SectionLabel>
+          <SectionHeading gray="Four steps" blue="to a working app." />
+
+          <p className="mx-auto mt-4 max-w-sm text-sm text-white/35">
+          No credit card required. Upgrade or downgrade anytime</p>
+        </div>
+          
+        <div className="mx-auto max-w-5xl">
+          <PricingTable
+            checkoutProps={{
+              appearance:{
+                elements:{
+                  drawerRoot:{
+                    zIndex:2000,
+                  },
+                },
+              },
+            }}
+          />
+        </div>
+      </section>
+
+      <section className="relative mx-auto mb-32 max-w-5xl overflow-hidden rounded-2xl border border-white/8 px-10 py-24 text-center">
+
+        <StarsBackground
+          className="absolute inset-0 h-full w-full"
+          style={{
+            maskImage:
+              "linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.4) 50%, transparent 100%)",
+            WebkitMaskImage:
+              "linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.4) 50%, transparent 100%)",
+          }}
+        />
+
+        <SectionHeading gray="Start building, " blue="for free"/>
+
+        <p className="mb-8 text-sm leading-relaxed text-white/40">
+          Get 10 free genertion on Sign up. No credit card required.
+          <br />
+          Upgrade when you&apos;re ready.
+        </p>
+        
+        <SignInButton mode="modal">
+          <Button
+            size={"lg"}
+            className="relative h-11 rounded-full bg-white px-8"
+          >
+            Get Started free
+            <ChevronRight className="h-4 w-4"/>
+          </Button>
+        </SignInButton>
+
+      </section>
+      
+
+      <footer
+      className="relative z-10 border-t border-white/7 py-12 mx-auto px-6 flex flex-wrap items-center justify-center text-stone-400"
+      >
+        Made by Ashish
+      </footer>
+
+      
+
+      
+
+    </main>
   );
 }
