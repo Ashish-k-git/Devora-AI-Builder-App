@@ -209,7 +209,7 @@ export async function POST(request:NextRequest){
                             //We throttle to one status update per 600ms and 
                             // extract just the bold heading or first sentence sot he UI stays clean 
                             const now  = Date.now() ; 
-                            if(now-lastEmitTime>6000){
+                            if(now-lastEmitTime>600){
                                 const label = extractThoughtLabel(part.text); 
                                 if(label){
                                     enqueue(sseEvent("status",{message:label})); 
@@ -242,7 +242,6 @@ export async function POST(request:NextRequest){
                             message:"AI returned Invalid JSON.Please try again"
                         }),
                     );
-                    controller.close(); 
                     return; 
                 }
                 const {

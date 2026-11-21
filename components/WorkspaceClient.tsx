@@ -6,7 +6,6 @@ import { FileData, Message, StatusStep, WorkspaceData } from '@/types/workspace'
 import ChatPanel from './ChatPanel';
 import { MIN_CREDITS_TO_GENERATE } from '@/lib/constants';
 import { toast } from 'sonner';
-import { error } from 'node:console';
 
 interface WorkspaceClientProps{
   initialPrompt: string | null; 
@@ -204,7 +203,7 @@ const WorkspaceClient = ({
               }else if(event.type ==="error"){
                 throw new Error(event.message); 
               }
-            } catch (error) {
+            } catch{
               //skip malformed SSE lines
               // throw new Error(error.message);
             }
@@ -317,7 +316,7 @@ const WorkspaceClient = ({
               }else if(event.type ==="error"){
                 throw new Error(event.message); 
               }
-            } catch (error) {
+            } catch{
               //skip malformed SSE lines
               // throw new Error(error.message);
             }

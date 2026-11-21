@@ -10,9 +10,9 @@ import {
   SandpackFileExplorer,
   useSandpack,
 } from "@codesandbox/sandpack-react";
-import { dracula,atomDark} from "@codesandbox/sandpack-themes";
+import {atomDark} from "@codesandbox/sandpack-themes";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { AlertTriangle, ArrowUp, Bot, Code2, Divide, Download, Eye, Loader2, Wand2 } from "lucide-react";
+import { AlertTriangle, ArrowUp, Bot, Code2,Download, Eye, Loader2} from "lucide-react";
 import { RingLoader } from "react-spinners";
 import { Button } from "./ui/button";
 import PricingModal from "./PricingModal";
@@ -438,7 +438,8 @@ function SandPackInner({
           >
             <TabsContent
               value="preview"
-              className="mt-0 h-full w-full"
+              forceMount
+              className="mt-0 h-full w-full data-[state=inactive]:hidden"
 
             >
               <SandpackPreview
@@ -537,6 +538,7 @@ export function CodePanel({
               options={{
                 //Tailwind v3 CDN injected into evry preview ifram 
                 externalResources:["https://cdn.tailwindcss.com"],
+                autorun: true,
                 recompileMode:"delayed",
                 recompileDelay:500,
               }}
