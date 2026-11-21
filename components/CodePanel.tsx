@@ -12,10 +12,11 @@ import {
 } from "@codesandbox/sandpack-react";
 import { dracula,atomDark} from "@codesandbox/sandpack-themes";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { AlertTriangle, ArrowUp, Bot, Code2, Divide, Eye, Loader2, Wand2 } from "lucide-react";
+import { AlertTriangle, ArrowUp, Bot, Code2, Divide, Download, Eye, Loader2, Wand2 } from "lucide-react";
 import { RingLoader } from "react-spinners";
 import { Button } from "./ui/button";
 import PricingModal from "./PricingModal";
+import JSZip from "jszip"
 
 // _________________ Placeholder ___________________
 const PLACEHOLDER_FILES = {
@@ -108,9 +109,116 @@ function SandPackInner({
 }){
     const {sandpack,listen} = useSandpack(); 
     const unsubscribeRef = useRef<(()=>void)|null>(null)
+
     const [previewError,setPreviewError] = useState<string | null>(null); 
+    const [isExporting , setIsExporting] = useState(false); 
+
     const [improveInput,setImproveInput] = useState(""); 
     const [showImproveInput,setShowImproveInput] = useState(false); 
+
+    const handleExportZip = async () => {
+      if(isExporting) return; 
+      setIsExporting(true); 
+
+      try {
+        const filesToZip = 
+            Object.keys(sandpack.files).length>0
+              ? sandpack.files
+              :(fileData?.files ?? {}); 
+
+        const dependencies = {
+          ...BASE_DEPENDENCIES,
+          ...(fileData?.dependencies ?? {}),
+        }; 
+
+        const zip = new JSZip(); 
+        const packageJson = {
+          name: appTitle ?? "Devora",
+          version: "1.0.0",
+          private: true,
+          dependencies: {
+            react: "^18.2.0",
+            "react-dom": "^18.2.0",
+            "react-scripts": "5.0.1",
+            ...dependencies,
+          },
+          scripts: {
+            start: "react-scripts start",
+            build: "react-scripts build",
+          },
+          browserslist: {
+            production: [">0.2%", "not dead", "not op_mini all"],
+            development: ["last 1 chrome version"],
+          },
+        };
+
+        zip.file("package.json",JSON.stringify(packageJson, null, 2))
+
+        //Injext Tailwind CDN into the HTML template 
+        zip.file(
+          "public/index.html",
+          `<!DOCTYPE html>
+          <html lang="en">
+            <head>
+              <meta charset="utf-8" />
+              <meta name="viewport" content="width=device-width, initial-scale=1" />
+              <title>Forge App</title>
+              <script src="https://cdn.tailwindcss.com"></script>
+            </head>
+            <body>
+              <div id="root"></div>
+            </body>
+          </html>`
+        );
+
+        // Add all generated source files under src/
+        for (const [filePath, fileObj] of Object.entries(filesToZip)) {
+          const code =
+            typeof fileObj === "object" && fileObj !== null && "code" in fileObj
+              ? (fileObj as { code: string }).code
+              : "";
+          const zipPath = filePath.startsWith("/")
+            ? `src${filePath}`
+            : `src/${filePath}`;
+          zip.file(zipPath, code);
+        }
+
+        zip.file(
+          "src/index.js",
+          `import React from 'react';
+          import ReactDOM from 'react-dom/client';
+          import App from './App';
+
+          const root = ReactDOM.createRoot(document.getElementById('root'));
+          root.render(<React.StrictMode><App /></React.StrictMode>);`
+        );
+
+        zip.file(
+          "README.md",
+          `# Forge App\n\nGenerated with [Forge](https://forge.app).\n\n## Getting started\n\n\`\`\`bash\nnpm install\nnpm start\n\`\`\``
+        );
+
+        const blob = await zip.generateAsync({type:"blob"});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a"); 
+        a.href = url;
+        const zipName = appTitle
+          ? `${appTitle
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, "-")
+              .replace(/^-|-$/g, "")}.zip`
+          : "devora-app.zip";
+        a.download = zipName;
+        a.click();
+        URL.revokeObjectURL(url);
+
+          
+      } catch (err) {
+        console.error("Export Failed",err); 
+      }finally{
+        setIsExporting(false)
+      }
+    }
 
     const handleImproveSubmit = async () =>{
       const trimmed = improveInput.trim(); 
@@ -284,8 +392,22 @@ function SandPackInner({
 
         )}
 
-          {/* TODO: Download ZIP button */}
-        </div>
+        {/* TODO: Download ZIP button */}
+        <Button
+          variant={"ghost"}
+          size={"sm"}
+          onClick={handleExportZip}
+          disabled = {isExporting || !fileData}
+        >
+          {isExporting ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ):(
+            <Download className="h-3.5 w-3.5" />
+          )}
+          Download
+        </Button>
+
+      </div>
 
 
         {/* Content area */}
