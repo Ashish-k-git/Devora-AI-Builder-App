@@ -22,18 +22,75 @@ import JSZip from "jszip"
 const PLACEHOLDER_FILES = {
   "/App.js": {
     code: `export default function App() {
+  const css = "@keyframes pulse{0%,100%{transform:scale(1);opacity:.6}50%{transform:scale(1.15);opacity:1}}" +
+    "@keyframes slide{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}" +
+    "@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}" +
+    "button:hover{background:rgba(255,255,255,0.12)!important}";
+
   return (
     <div style={{
       minHeight: "100vh",
-      background: "#0a0a0a",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
+      background: "radial-gradient(circle at 50% 30%, #1e1b4b 0%, #0a0a0a 65%)",
       fontFamily: "system-ui, sans-serif",
+      padding: 24,
     }}>
-      <div style={{ textAlign: "center", color: "rgba(255,255,255,0.3)" }}>
-        <div style={{ fontSize: 40, marginBottom: 16 }}>⚡</div>
-        <p style={{ fontSize: 14 }}>Your app will appear here</p>
+      <style>{css}</style>
+
+      <div style={{
+        textAlign: "center",
+        maxWidth: 440,
+        padding: "48px 36px",
+        borderRadius: 24,
+        background: "rgba(255,255,255,0.04)",
+        border: "1px solid rgba(255,255,255,0.08)",
+        boxShadow: "0 20px 60px rgba(99,102,241,0.15)",
+      }}>
+        <div style={{ position: "relative", width: 88, height: 88, margin: "0 auto 28px" }}>
+          <div style={{
+            position: "absolute", inset: 0, borderRadius: "50%",
+            background: "radial-gradient(circle, rgba(129,140,248,0.5), transparent 70%)",
+            animation: "pulse 2.4s ease-in-out infinite",
+          }} />
+          <div style={{
+            position: "relative", fontSize: 44, lineHeight: "88px",
+            animation: "float 3s ease-in-out infinite",
+          }}>⚡</div>
+        </div>
+
+        <h1 style={{ margin: 0, fontSize: 22, fontWeight: 600, color: "#fff" }}>
+          Our AI is under heavy load
+        </h1>
+        <p style={{ margin: "12px 0 24px", fontSize: 14, lineHeight: 1.6, color: "rgba(255,255,255,0.55)" }}>
+          Currently the AI model is facing too much load.
+          Please try again in a few minutes.
+        </p>
+
+        <div style={{
+          height: 4, borderRadius: 4, overflow: "hidden",
+          background: "rgba(255,255,255,0.08)", marginBottom: 28,
+        }}>
+          <div style={{
+            width: "40%", height: "100%", borderRadius: 4,
+            background: "linear-gradient(90deg, #6366f1, #a78bfa)",
+            animation: "slide 1.6s ease-in-out infinite",
+          }} />
+        </div>
+
+        <button
+          onClick={() => window.location.reload()}
+          style={{
+            padding: "10px 24px", borderRadius: 999, cursor: "pointer",
+            color: "#fff", fontSize: 14, fontWeight: 500,
+            background: "rgba(255,255,255,0.06)",
+            border: "1px solid rgba(255,255,255,0.15)",
+            transition: "background .2s",
+          }}
+        >
+          Try again
+        </button>
       </div>
     </div>
   );
